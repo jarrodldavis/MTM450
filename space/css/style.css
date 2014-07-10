@@ -1,0 +1,11 @@
+main {
+	width: 100%;
+	text-align: center;
+}
+
+canvas {
+	display: inline;
+	border: thin solid black;
+	border-top: none;
+	box-shadow: inset 0px 0px 10px 0px #aaa;
+}

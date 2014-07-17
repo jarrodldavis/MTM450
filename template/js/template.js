@@ -6,14 +6,25 @@ var main = (function () {
 		GAME_OVER: 3
 	};
 
+	var TIME = {
+		MILLISECONDS_PER_SECOND: 1000,
+		MAX_GAME_TIME_SECONDS: 10
+	};
+
+	var MISC = {
+		DEGREE_ROTATION_PER_FRAME: 0.5
+	};
+
 	var game = {
 		stage: null,
 		queue: null,
 		width: 500,
 		height: 500,
-		state: STATES.TITLE,
+		state: STATES.RUNNING,
 		isSwitchingState: true,
 		fps: 30,
+		time: 0,
+		startTime: 0,
 		manifest: [
 			{ src: "img/sun.png", id: "sprites.sun" },
 			{ src: "img/title.png", id: "backgrounds.title" },
@@ -23,7 +34,8 @@ var main = (function () {
 			{ src: "json/frames.json", id: "frames" }
 		],
 		sprites: {},
-		backgrounds: {}
+		backgrounds: {},
+		text: {}
 	};
 
 	var loop = (function () {
@@ -49,11 +61,18 @@ var main = (function () {
 			if (game.isSwitchingState) {
 				stage.addChild(game.backgrounds.gameRunning);
 				stage.addChild(sun);
+				stage.addChild(game.text.time);
 				sun.play();
 				game.isSwitchingState = false;
 			}
 
-			sun.rotation += 0.5;
+			game.text.time.text = "Time: " + (game.time / TIME.MILLISECONDS_PER_SECOND).toFixed(1);
+
+			if ((game.time / TIME.MILLISECONDS_PER_SECOND) >= TIME.MAX_GAME_TIME_SECONDS) {
+				game.state = STATES.GAME_OVER;
+			}
+
+			sun.rotation += MISC.DEGREE_ROTATION_PER_FRAME;
 		}
 
 		function gameOverLoop() {
@@ -66,7 +85,10 @@ var main = (function () {
 		return function() {
 			if (game.isSwitchingState) {
 				game.stage.removeAllChildren();
+				game.startTime = createjs.Ticker.getTime();
 			}
+
+			game.time = createjs.Ticker.getTime() - game.startTime;
 
 			var oldState = game.state;
 			switch (game.state) {
@@ -88,61 +110,77 @@ var main = (function () {
 		};
 	})();
 
-	function initCanvas() {
-		var canvas = document.createElement("canvas");
-		canvas.width = game.width;
-		canvas.height = game.height;
-		document.getElementById("game").appendChild(canvas);
-		game.stage = new createjs.Stage(canvas);
-	}
-
-	var initPreload = (function () {
-		function initSprites() {
-			var sunSprite = new createjs.SpriteSheet({
-				images: [game.queue.getResult("sprites.sun")],
-				frames: game.queue.getResult("frames").sun
-			});
-
-			var sun = game.sprites.sun = new createjs.Sprite(sunSprite);
-			var sunBounds = sun.getBounds();
-
-			sun.regX = (sunBounds.width / 2);
-			sun.regY = (sunBounds.height / 2);
-
-			sun.x = (game.width / 2);
-			sun.y = (game.height / 2);
+	var init = (function () {
+		function initCanvas() {
+			var canvas = document.createElement("canvas");
+			canvas.width = game.width;
+			canvas.height = game.height;
+			document.getElementById("game").appendChild(canvas);
+			game.stage = new createjs.Stage(canvas);
 		}
 
-		function initBackgrounds() {
-			function get(id) {
-				return game.queue.getResult(id);
+		var initPreload = (function () {
+			function initSprites() {
+				var sunSprite = new createjs.SpriteSheet({
+					images: [game.queue.getResult("sprites.sun")],
+					frames: game.queue.getResult("frames").sun
+				});
+
+				var sun = game.sprites.sun = new createjs.Sprite(sunSprite);
+				var sunBounds = sun.getBounds();
+
+				sun.regX = (sunBounds.width / 2);
+				sun.regY = (sunBounds.height / 2);
+
+				sun.x = (game.width / 2);
+				sun.y = (game.height / 2);
 			}
 
-			["title", "instructions", "gameRunning", "gameOver"].forEach(function(id) {
-				game.backgrounds[id] = new createjs.Bitmap(get("backgrounds." + id));
-			});
-		}
+			function initBackgrounds() {
+				function get(id) {
+					return game.queue.getResult(id);
+				}
 
-		function initSounds() {
-			console.info("No sounds initialized in initSounds().");
-		}
+				["title", "instructions", "gameRunning", "gameOver"].forEach(function(id) {
+					game.backgrounds[id] = new createjs.Bitmap(get("backgrounds." + id));
+				});
+			}
 
-		return function () {
-			var queue = game.queue = new createjs.LoadQueue(true, "assets/");
-			queue.on("complete", function () {
-				initSprites();
-				initSounds();
-				initBackgrounds();
-				createjs.Ticker.addEventListener("tick", loop);
-				createjs.Ticker.setFPS(game.fps);
-			});
-			queue.loadManifest(game.manifest);
+			function initSounds() {
+				console.info("No sounds initialized in initSounds().");
+			}
+
+			return function () {
+				var queue = game.queue = new createjs.LoadQueue(true, "assets/");
+				queue.on("complete", function () {
+					initSprites();
+					initSounds();
+					initBackgrounds();
+					createjs.Ticker.addEventListener("tick", loop);
+					createjs.Ticker.setFPS(game.fps);
+				});
+				queue.loadManifest(game.manifest);
+			};
+		})();
+
+		var initText = function() {
+			var time = game.text.time = new createjs.Text("Time: 0", "20px Arial", "#FFFFFF");
+			time.textAlign = "right";
+			time.x = game.width - 5;
+			time.y = 5;
+		};
+
+		return {
+			canvas: initCanvas,
+			preload: initPreload,
+			text: initText
 		};
 	})();
 
 	return function () {
-		initCanvas();
-		initPreload();
+		init.canvas();
+		init.text();
+		init.preload();
 	};
 })();
 

@@ -30,6 +30,7 @@ var main = (function () {
 		width: 500,
 		height: 500,
 		state: STATES.TITLE,
+		score: 0,
 		isSwitchingState: true,
 		fps: 30,
 		time: 0,
@@ -89,10 +90,13 @@ var main = (function () {
 				stage.addChild(text.time);
 				stage.addChild(text.mouse);
 				stage.addChild(text.keys);
+				text.score.y = 5;
+				stage.addChild(text.score);
 				sun.play();
 				game.isSwitchingState = false;
 			}
 
+			game.text.time.score = "Score: " + game.score;
 			game.text.time.text = "Time: " + (game.time / TIME.MILLISECONDS_PER_SECOND).toFixed(1);
 			game.text.mouse.text = "Mouse { X: " + game.mouse.x + ", Y: "+ game.mouse.y +" }";
 
@@ -120,6 +124,8 @@ var main = (function () {
 				game.stage.addChild(game.backgrounds.gameOver);
 				game.stage.addChild(game.buttons.sprites.play);
 				game.stage.addChild(game.buttons.sprites.mainMenu);
+				game.stage.addChild(game.text.score);
+				game.text.score.y = 175;
 				game.isSwitchingState = false;
 			}
 		}
@@ -270,6 +276,11 @@ var main = (function () {
 			keys.regY = keyBounds.height;
 			keys.x = game.width - 5;
 			keys.y = game.height - 5;
+
+			var score = game.text.score = new createjs.Text("Score: 0", "20px Arial", "#FFFFFF");
+			score.textAlign = "center";
+			score.x = game.width / 2;
+			score.y = 5;
 		};
 
 		var initEvents = function() {

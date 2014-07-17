@@ -1,32 +1,54 @@
-var main = (function() {
+var main = (function () {
 	var game = {
 		stage: null,
 		queue: null,
-		width: 0,
-		height: 0,
+		width: 500,
+		height: 500,
 		fps: 30,
 		manifest: [
-			{ src: "sprites.png", id: "sprites" }
-		]
+			{ src: "img/sun.png", id: "sun" },
+			{ src: "json/frames.json", id: "frames" }
+		],
+		sprites: {}
 	};
 
-	var initPreload = (function() {
+	var initPreload = (function () {
 		function initSprites() {
+			var sunSprite = new createjs.SpriteSheet({
+				images: [game.queue.getResult("sun")],
+				frames: game.queue.getResult("frames").sun
+			});
 
+			var sun = game.sprites.sun = new createjs.Sprite(sunSprite);
+			var sunBounds = sun.getBounds();
+
+			sun.regX = (sunBounds.width / 2);
+			sun.regY = (sunBounds.height / 2);
+
+			sun.x = (game.width / 2);
+			sun.y = (game.height / 2);
+
+			sun.play();
+			game.stage.addChild(sun);
 		}
 
 		function initSounds() {
-
+			console.info("No sounds initialized in initSounds().");
 		}
 
-		function startLoop() {
-			createjs.Ticker.addEventListener("tick", function() { game.stage.update(); });
-			createjs.Ticker.setFPS(game.fps);
+		function loop() {
+			game.sprites.sun.rotation += 0.5;
+			game.stage.update();
 		}
 
-		return function() {
-			var queue = new createjs.LoadQueue(true, "assets/");
-			queue.on("complete", function() { initSprites(); initSounds(); startLoop(); });
+		return function () {
+			var queue = game.queue = new createjs.LoadQueue(true, "assets/");
+			queue.on("complete", function () {
+				initSprites();
+				initSounds();
+				createjs.Ticker.addEventListener("tick", loop);
+				createjs.Ticker.setFPS(game.fps);
+			});
 			queue.loadManifest(game.manifest);
 		};
 	})();
@@ -39,7 +61,7 @@ var main = (function() {
 		game.stage = new createjs.Stage(canvas);
 	}
 
-	return function() {
+	return function () {
 		initCanvas();
 		initPreload();
 	};

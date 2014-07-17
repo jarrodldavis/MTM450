@@ -25,6 +25,10 @@ var main = (function () {
 		fps: 30,
 		time: 0,
 		startTime: 0,
+		mouse: {
+			x: 0,
+			y: 0
+		},
 		manifest: [
 			{ src: "img/sun.png", id: "sprites.sun" },
 			{ src: "img/title.png", id: "backgrounds.title" },
@@ -56,17 +60,21 @@ var main = (function () {
 		function runningLoop() {
 			var stage = game.stage;
 			var sprites = game.sprites;
+			var text = game.text;
+
 			var sun = sprites.sun;
 
 			if (game.isSwitchingState) {
 				stage.addChild(game.backgrounds.gameRunning);
 				stage.addChild(sun);
-				stage.addChild(game.text.time);
+				stage.addChild(text.time);
+				stage.addChild(text.mouse);
 				sun.play();
 				game.isSwitchingState = false;
 			}
 
 			game.text.time.text = "Time: " + (game.time / TIME.MILLISECONDS_PER_SECOND).toFixed(1);
+			game.text.mouse.text = "Mouse { X: " + game.mouse.x + ", Y: "+ game.mouse.y +" }";
 
 			if ((game.time / TIME.MILLISECONDS_PER_SECOND) >= TIME.MAX_GAME_TIME_SECONDS) {
 				game.state = STATES.GAME_OVER;
@@ -168,12 +176,26 @@ var main = (function () {
 			time.textAlign = "right";
 			time.x = game.width - 5;
 			time.y = 5;
+
+			var mouse = game.text.mouse = new createjs.Text("Mouse { X: 0, Y: 0 }", "20px Arial", "#FFFFFF");
+			mouse.textAlign = "right";
+			mouse.x = game.width - 5;
+			mouse.y = 30;
+		};
+
+		var initEvents = function() {
+			var stage = game.stage;
+			stage.on("stagemousemove", function(event) {
+				game.mouse.x = event.stageX;
+				game.mouse.y = event.stageY;
+			});
 		};
 
 		return {
 			canvas: initCanvas,
 			preload: initPreload,
-			text: initText
+			text: initText,
+			events: initEvents
 		};
 	})();
 
@@ -181,6 +203,7 @@ var main = (function () {
 		init.canvas();
 		init.text();
 		init.preload();
+		init.events();
 	};
 })();
 

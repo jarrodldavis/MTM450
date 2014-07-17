@@ -11,6 +11,15 @@ var main = (function () {
 		MAX_GAME_TIME_SECONDS: 10
 	};
 
+	var KEYS = {
+		13: "Enter",
+		32: "Space",
+		38: "Up",
+		40: "Down",
+		37: "Left",
+		39: "Right"
+	};
+
 	var MISC = {
 		DEGREE_ROTATION_PER_FRAME: 0.5
 	};
@@ -29,6 +38,7 @@ var main = (function () {
 			x: 0,
 			y: 0
 		},
+		keys: {},
 		manifest: [
 			{ src: "img/sun.png", id: "sprites.sun" },
 			{ src: "img/title.png", id: "backgrounds.title" },
@@ -69,12 +79,25 @@ var main = (function () {
 				stage.addChild(sun);
 				stage.addChild(text.time);
 				stage.addChild(text.mouse);
+				stage.addChild(text.keys);
 				sun.play();
 				game.isSwitchingState = false;
 			}
 
 			game.text.time.text = "Time: " + (game.time / TIME.MILLISECONDS_PER_SECOND).toFixed(1);
 			game.text.mouse.text = "Mouse { X: " + game.mouse.x + ", Y: "+ game.mouse.y +" }";
+
+			var keys = Object.keys(game.keys).filter(function(keyCode) {
+				return game.keys[keyCode];
+			});
+			for (var i = 0; i < keys.length; i++) {
+				if (KEYS[keys[i]]) {
+					keys[i] = KEYS[keys[i]];
+				} else {
+					keys[i] = String.fromCharCode(keys[i]);
+				}
+			}
+			game.text.keys.text = "Keys [" + keys + "]";
 
 			if ((game.time / TIME.MILLISECONDS_PER_SECOND) >= TIME.MAX_GAME_TIME_SECONDS) {
 				game.state = STATES.GAME_OVER;
@@ -181,6 +204,13 @@ var main = (function () {
 			mouse.textAlign = "right";
 			mouse.x = game.width - 5;
 			mouse.y = 30;
+
+			var keys = game.text.keys = new createjs.Text("Keys []", "20px Arial", "#FFFFFF");
+			var keyBounds = keys.getBounds();
+			keys.textAlign = "right";
+			keys.regY = keyBounds.height;
+			keys.x = game.width - 5;
+			keys.y = game.height - 5;
 		};
 
 		var initEvents = function() {
@@ -189,6 +219,16 @@ var main = (function () {
 				game.mouse.x = event.stageX;
 				game.mouse.y = event.stageY;
 			});
+
+			document.onkeydown = function(event) {
+				console.info("Key '" + event.keyCode + "' down.");
+				game.keys[event.keyCode] = true;
+			};
+
+			document.onkeyup = function(event) {
+				console.info("Key '" + event.keyCode + "' up.");
+				game.keys[event.keyCode] = false;
+			};
 		};
 
 		return {

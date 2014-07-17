@@ -29,7 +29,7 @@ var main = (function () {
 		queue: null,
 		width: 500,
 		height: 500,
-		state: STATES.RUNNING,
+		state: STATES.TITLE,
 		isSwitchingState: true,
 		fps: 30,
 		time: 0,
@@ -45,17 +45,24 @@ var main = (function () {
 			{ src: "img/instructions.png", id: "backgrounds.instructions" },
 			{ src: "img/game-running.png", id: "backgrounds.gameRunning" },
 			{ src: "img/game-over.png", id: "backgrounds.gameOver" },
+			{ src: "img/buttons.png", id: "buttons.all" },
 			{ src: "json/frames.json", id: "frames" }
 		],
 		sprites: {},
 		backgrounds: {},
-		text: {}
+		text: {},
+		buttons: {
+			sprites: {},
+			helpers: {}
+		}
 	};
 
 	var loop = (function () {
 		function titleLoop() {
 			if (game.isSwitchingState) {
 				game.stage.addChild(game.backgrounds.title);
+				game.stage.addChild(game.buttons.sprites.play);
+				game.stage.addChild(game.buttons.sprites.instructions);
 				game.isSwitchingState = false;
 			}
 		}
@@ -63,6 +70,8 @@ var main = (function () {
 		function instructionsLoop() {
 			if (game.isSwitchingState) {
 				game.stage.addChild(game.backgrounds.instructions);
+				game.stage.addChild(game.buttons.sprites.play);
+				game.stage.addChild(game.buttons.sprites.mainMenu);
 				game.isSwitchingState = false;
 			}
 		}
@@ -109,6 +118,8 @@ var main = (function () {
 		function gameOverLoop() {
 			if (game.isSwitchingState) {
 				game.stage.addChild(game.backgrounds.gameOver);
+				game.stage.addChild(game.buttons.sprites.play);
+				game.stage.addChild(game.buttons.sprites.mainMenu);
 				game.isSwitchingState = false;
 			}
 		}
@@ -148,6 +159,7 @@ var main = (function () {
 			canvas.height = game.height;
 			document.getElementById("game").appendChild(canvas);
 			game.stage = new createjs.Stage(canvas);
+			game.stage.enableMouseOver(10);
 		}
 
 		var initPreload = (function () {
@@ -169,12 +181,58 @@ var main = (function () {
 
 			function initBackgrounds() {
 				function get(id) {
-					return game.queue.getResult(id);
+					return game.queue.getResult("backgrounds." + id);
 				}
 
 				["title", "instructions", "gameRunning", "gameOver"].forEach(function(id) {
-					game.backgrounds[id] = new createjs.Bitmap(get("backgrounds." + id));
+					game.backgrounds[id] = new createjs.Bitmap(get(id));
 				});
+			}
+
+			function initButtons() {
+				function get(id) {
+					return game.queue.getResult(id);
+				}
+
+				var animations = {
+					playNormal: [0, 0],
+					playHover: [1, 1],
+					instructionsNormal: [2, 2],
+					instructionsHover: [3, 3],
+					mainMenuNormal: [4, 4],
+					mainMenuHover: [5, 5]
+				};
+
+				var buttonSpriteSheet = new createjs.SpriteSheet({
+					images: [get("buttons.all")],
+					frames: get("frames").buttons,
+					animations: animations
+				});
+
+				var buttonMaster = new createjs.Sprite(buttonSpriteSheet);
+				var buttons = game.buttons;
+
+				[
+					["play", STATES.RUNNING, {x: 70, y: 300}],
+					["instructions", STATES.INSTRUCTIONS, {x: 235, y: 300}],
+					["mainMenu", STATES.TITLE, {x: 235, y: 300}]
+				]
+						.forEach(function(helperInfo) {
+							var buttonName = helperInfo[0];
+							var buttonStateNormal = buttonName + "Normal";
+							var buttonStateHover = buttonName + "Hover";
+							var sprite = buttons.sprites[buttonName] = buttonMaster.clone();
+							sprite.gotoAndStop(buttonStateNormal);
+							sprite.x = helperInfo[2].x;
+							sprite.y = helperInfo[2].y;
+
+							var helper = buttons.helpers[buttonName] = new createjs.ButtonHelper(sprite, buttonStateNormal,
+									buttonStateHover, buttonStateHover, false);
+							sprite.on("click", function() {
+								game.state = helperInfo[1];
+								game.isSwitchingState = true;
+							});
+						});
 			}
 
 			function initSounds() {
@@ -187,6 +245,7 @@ var main = (function () {
 					initSprites();
 					initSounds();
 					initBackgrounds();
+					initButtons();
 					createjs.Ticker.addEventListener("tick", loop);
 					createjs.Ticker.setFPS(game.fps);
 				});

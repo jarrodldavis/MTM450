@@ -6,16 +6,24 @@ var main = (function () {
 		height: 500,
 		fps: 30,
 		manifest: [
-			{ src: "img/sun.png", id: "sun" },
+			{ src: "img/sun.png", id: "sprite.sun" },
 			{ src: "json/frames.json", id: "frames" }
 		],
 		sprites: {}
 	};
 
+	function initCanvas() {
+		var canvas = document.createElement("canvas");
+		canvas.width = game.width;
+		canvas.height = game.height;
+		document.getElementById("game").appendChild(canvas);
+		game.stage = new createjs.Stage(canvas);
+	}
+
 	var initPreload = (function () {
 		function initSprites() {
 			var sunSprite = new createjs.SpriteSheet({
-				images: [game.queue.getResult("sun")],
+				images: [game.queue.getResult("sprite.sun")],
 				frames: game.queue.getResult("frames").sun
 			});
 
@@ -52,14 +60,6 @@ var main = (function () {
 			queue.loadManifest(game.manifest);
 		};
 	})();
-
-	function initCanvas() {
-		var canvas = document.createElement("canvas");
-		canvas.width = game.width;
-		canvas.height = game.height;
-		document.getElementById("game").appendChild(canvas);
-		game.stage = new createjs.Stage(canvas);
-	}
 
 	return function () {
 		initCanvas();
